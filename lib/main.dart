@@ -27,6 +27,11 @@ class _SelectScreenState extends State<SelectScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text("Selection Page"),
+        backgroundColor: Colors.blue,
+        centerTitle: true,
+      ),      
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -39,6 +44,8 @@ class _SelectScreenState extends State<SelectScreen> {
                 child: const Text("Refills"),
               ),
             ),
+            //sized Box for button spacing 
+            SizedBox(height: 20),
             SizedBox(
               width: 250,
               height: 60,
@@ -47,6 +54,7 @@ class _SelectScreenState extends State<SelectScreen> {
                 child: const Text("Desserts"),
               ),
             ),
+            SizedBox(height: 20),
             SizedBox(
               width: 250,
               height: 60,
@@ -55,6 +63,7 @@ class _SelectScreenState extends State<SelectScreen> {
                 child: const Text("Extras"),
               ),
             ),
+            SizedBox(height: 20),
             SizedBox(
               width: 250,
               height: 60,
