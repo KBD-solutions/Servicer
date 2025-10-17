@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/employer_dashboard.dart'; 
+import 'screens/employee_login.dart';  // 👈 added this so we can navigate to login page
 
 void main() {
   runApp(const MyApp());
@@ -10,7 +10,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       home: SelectScreen(),
     );
   }
@@ -67,14 +67,13 @@ class _SelectScreenState extends State<SelectScreen> {
         ),
       ),
 
-    
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 10, right: 10),
         child: FloatingActionButton.extended(
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const EmployerDashboardPage()),
+              MaterialPageRoute(builder: (context) => const EmployeeLoginPage()),
             );
           },
           label: const Text(
@@ -82,7 +81,7 @@ class _SelectScreenState extends State<SelectScreen> {
             style: TextStyle(fontSize: 12),
           ),
           icon: const Icon(Icons.lock),
-          backgroundColor: const Color.fromARGB(221, 231, 230, 230),
+          backgroundColor: Colors.black87,
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
