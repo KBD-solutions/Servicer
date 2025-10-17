@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EmployerDashboardPage extends StatefulWidget {
   const EmployerDashboardPage({super.key});
@@ -30,6 +31,22 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme; // this gives us app colors
 
+    // Firestore stream with filtering dynamically by _filter
+    Stream<QuerySnapshot> requestsStream() {
+      if (_filter == 'All') {
+        return FirebaseFirestore.instance
+            .collection('requests')
+            .orderBy('timestamp', descending: true)
+            .snapshots();
+      } else {
+        return FirebaseFirestore.instance
+            .collection('requests')
+            .where('type', isEqualTo: _filter)
+            .orderBy('timestamp', descending: true)
+            .snapshots();
+      }
+    }
+
     return Scaffold(
       // the top bar with name of page and icons
       appBar: AppBar(
@@ -57,7 +74,7 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
       body: TabBarView(
         controller: _tab,
         children: [
-          //  TAB 1: LIVEE
+          //  TAB 1: LIVE
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -109,31 +126,53 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
 
                 const SizedBox(height: 12),
 
-                // here I just added a simple box to show that the design works
-                // I will add the real list of requests later
+                // Replaced placeholder with StreamBuilder for live requests
                 Expanded(
-                  child: Center(
-                    child: Card(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      child: const SizedBox(
-                        width: 420,
-                        height: 180,
-                        child: Center(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: requestsStream(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return const Center(
                           child: Text(
                             'No requests yet.\nI will add items later.',
                             textAlign: TextAlign.center,
                             style: TextStyle(fontSize: 16),
                           ),
-                        ),
-                      ),
-                    ),
+                        );
+                      }
+                      final docs = snapshot.data!.docs;
+                      return ListView.builder(
+                        itemCount: docs.length,
+                        itemBuilder: (context, index) {
+                          final req = docs[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 6),
+                            child: ListTile(
+                              title: Text(req['type']),
+                              subtitle: Text('Table: ${req['table']}'),
+                              trailing: Text(req['status']),
+                              onTap: () {
+                                // On tap update status to In-Progress
+                                FirebaseFirestore.instance
+                                    .collection('requests')
+                                    .doc(req.id)
+                                    .update({'status': 'In-Progress'});
+                              },
+                            ),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
               ],
             ),
           ),
 
-          //  TAB 2: HISTORY 
+          //  TAB 2: HISTORY
           Padding(
             padding: const EdgeInsets.all(16),
             child: Card(

@@ -1,9 +1,42 @@
 import 'package:flutter/material.dart';
 import 'screens/employer_dashboard.dart'; 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  print("Firebase initialized");
+
+   // Configure Firestore settings here
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+  );
+
+
   runApp(const MyApp());
 }
+
+
+
+void _sendRequest(String type) async {
+  try {
+    await FirebaseFirestore.instance.collection('requests').add({
+      'type': type,
+      'status': 'Pending',
+      'timestamp': FieldValue.serverTimestamp(),
+      'table': 'Table 5',
+    });
+    print('Request $type sent successfully');
+  } catch (e) {
+    print('Error sending request: $e');
+  }
+}
+
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -35,7 +68,7 @@ class _SelectScreenState extends State<SelectScreen> {
               width: 250,
               height: 60,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () => _sendRequest("Refills"),
                 child: const Text("Refills"),
               ),
             ),
@@ -59,7 +92,7 @@ class _SelectScreenState extends State<SelectScreen> {
               width: 250,
               height: 60,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () => _sendRequest("Call Server"),
                 child: const Text("Call Server"),
               ),
             ),
