@@ -35,9 +35,6 @@ class _ItemsSelectionPageState extends State<ItemsSelectionPage> {
   void _confirm() {
     // return the map to the previous screen (or show a summary)
     Navigator.pop(context, _order);
-    // If you want a toast/snackbar here instead of pop:
-    // final summary = _order.entries.where((e)=>e.value>0).map((e) => '${e.key}: ${e.value}').join(' • ');
-    // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(summary.isEmpty ? 'No items selected' : 'Order: $summary')));
   }
 
   @override
