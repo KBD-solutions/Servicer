@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-// We only need the base dashboard import
-import 'employer_dashboard.dart'; 
+import 'manager_dashboard.dart';       // new name for manager view (we'll alias to your existing file)
+import 'server_dashboard.dart';        // simple server view (add/mark done only)
 
 /*
-  This unified login page handles role selection (Server or Manager)
-  and routes both roles to the same Employer Dashboard.
-  The role is passed as an argument to the dashboard for context.
-  
+  This page lets the employee pick a role (Server or Manager)
+  and log in with email + a simple PIN.
+  I kept it super basic on purpose for class demo.
   PINs (for now):
     - Server: 1234
     - Manager: 2468
@@ -20,7 +19,7 @@ class RoleLoginPage extends StatefulWidget {
 }
 
 class _RoleLoginPageState extends State<RoleLoginPage> {
-  String _role = 'Server'; // default choice
+  String _role = 'Server';               // default choice
   final _email = TextEditingController();
   final _pin = TextEditingController();
   String? _error;
@@ -33,15 +32,13 @@ class _RoleLoginPageState extends State<RoleLoginPage> {
   }
 
   void _tryLogin() {
-    setState(() => _error = null);
-
-    // 1. Basic Validation
+    // very simple checks just for now
     if (_email.text.trim().isEmpty) {
       setState(() => _error = 'Please enter an email');
       return;
     }
 
-    // 2. Role-Specific PIN Check
+    // I split pins so roles feel different
     final pin = _pin.text.trim();
     if (_role == 'Server' && pin != '1234') {
       setState(() => _error = 'Wrong PIN for Server (use 1234)');
@@ -52,13 +49,18 @@ class _RoleLoginPageState extends State<RoleLoginPage> {
       return;
     }
 
-    // 3. Success -> Route both roles to the EmployerDashboardPage
-    Navigator.pushReplacement(
-      context,
-      // NOTE: We could pass the role here if the dashboard needed to change its UI:
-      // MaterialPageRoute(builder: (_) => EmployerDashboardPage(role: _role)),
-      MaterialPageRoute(builder: (_) => const EmployerDashboardPage()),
-    );
+    // send to the correct dashboard
+    if (_role == 'Server') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const ServerDashboardPage()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const ManagerDashboardPage()),
+      );
+    }
   }
 
   @override
@@ -78,7 +80,7 @@ class _RoleLoginPageState extends State<RoleLoginPage> {
                   const Text('Pick your role and sign in', style: TextStyle(fontSize: 18)),
                   const SizedBox(height: 12),
 
-                  // Role Selection Chips
+                  // role buttons – I used two simple ChoiceChips to keep it easy
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -108,7 +110,6 @@ class _RoleLoginPageState extends State<RoleLoginPage> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: _pin,
-                    // Dynamic Label Text based on selected role
                     decoration: InputDecoration(
                       labelText: _role == 'Server'
                           ? 'PIN for Server (1234)'
