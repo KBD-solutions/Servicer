@@ -1,6 +1,6 @@
 //material packages because we worked with widgets
 import 'package:flutter/material.dart';
-import 'package:Servicer_app/main.dart';
+import 'package:Hey_Server/main.dart';
 
 //testing packages
 import 'package:flutter_test/flutter_test.dart';
