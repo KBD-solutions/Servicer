@@ -46,4 +46,3 @@ class PopupUtils {
     );
   }
 }
-// Note: The _Drink class and list from your friend's old file are not needed here.

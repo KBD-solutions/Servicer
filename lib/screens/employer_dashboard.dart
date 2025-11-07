@@ -61,7 +61,6 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
   }
 
   // Live Requests Query: Fetches all Pending/In-Progress requests, ordered by status and time.
-  // Note: We MUST order by 'status' first because 'whereIn' is used on it, then by timestamp.
   Stream<QuerySnapshot> liveRequestsStream() {
     Query query = FirebaseFirestore.instance
         .collection('requests')
@@ -69,7 +68,7 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
           RequestStatus.pending.firestoreValue,
           RequestStatus.inProgress.firestoreValue
         ])
-        .orderBy('status') 
+        .orderBy('status')
         .orderBy('timestamp', descending: true); // Primary sorting for new requests first
 
     // We filter by 'type' LOCALLY in the StreamBuilder to avoid complex Firebase indexing rules.
@@ -96,10 +95,21 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
         }
 
         final docs = snapshot.data!.docs;
-        // Calculate counts based on real-time Firestore data
-        final pendingCount = docs.where((doc) => doc['status'] == RequestStatus.pending.firestoreValue).length;
-        final inProgressCount = docs.where((doc) => doc['status'] == RequestStatus.inProgress.firestoreValue).length;
-        final doneCount = docs.where((doc) => doc['status'] == RequestStatus.done.firestoreValue).length;
+        
+        final pendingCount = docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>?;
+          return data?['status'] == RequestStatus.pending.firestoreValue;
+        }).length;
+        
+        final inProgressCount = docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>?;
+          return data?['status'] == RequestStatus.inProgress.firestoreValue;
+        }).length;
+
+        final doneCount = docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>?;
+          return data?['status'] == RequestStatus.done.firestoreValue;
+        }).length;
 
         return Row(
           children: [
@@ -157,7 +167,7 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
       body: TabBarView(
         controller: _tab,
         children: [
-          //  TAB 1: LIVE
+          // TAB 1: LIVE
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -196,7 +206,7 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
                       
                       // Check for errors (helps with debugging network/rule issues)
                       if (snapshot.hasError) {
-                          print('Firestore Stream Error: ${snapshot.error}'); 
+                          debugPrint('Firestore Stream Error: ${snapshot.error}'); 
                           return Center(
                             child: Text(
                               'Error: ${snapshot.error}',
@@ -242,7 +252,8 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
                           final type = req['type'] as String? ?? 'N/A';
                           final detail = req['detail'] as String? ?? 'No details provided'; 
                           final table = req['table'] as String? ?? 'N/A';
-                          final statusValue = req['status'] as String? ?? 'Pending';
+                          // Safely get statusValue, defaulting to 'Pending' if missing
+                          final statusValue = req['status'] as String? ?? 'Pending'; 
                           final status = RequestStatus.values.firstWhere(
                             (s) => s.firestoreValue == statusValue,
                             orElse: () => RequestStatus.pending,
@@ -265,7 +276,7 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
             ),
           ),
 
-          //  TAB 2: HISTORY
+          // TAB 2: HISTORY
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -430,16 +441,19 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
             children: [
               Icon(icon),
               const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: const TextStyle(fontSize: 12)),
-                  Text(
-                    value,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-                  ),
-                ],
-              ),
+              // FIX: Wrap text in Expanded to prevent RenderFlex overflow
+              Expanded( 
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: const TextStyle(fontSize: 12)),
+                    Text(
+                      value,
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ), // Added Expanded here
             ],
           ),
         ),

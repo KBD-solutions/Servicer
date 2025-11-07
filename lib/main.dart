@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart'; 
+import 'dart:html' as html;
 import 'firebase_options.dart'; 
 import 'screens/employee_login.dart'; 
 import 'screens/employer_dashboard.dart'; 
@@ -8,6 +10,9 @@ import 'screens/item_selection_page.dart';
 import 'screens/menu_pdf_viewer.dart';
 // Import the utility file for the Call Server dialog
 import 'Utils/selection_tools.dart'; 
+
+// GLOBAL STATE: Placeholder for future dynamic table/token
+String currentSessionToken = 'default_unverified'; 
 
 void main() async {
   // Always call this first when using plugins like Firebase
@@ -19,7 +24,7 @@ void main() async {
   );
   print("Firebase initialized");
 
-  // Configure Firestore settings here (enables offline persistence)
+  // We use the basic stable settings.
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
   );
@@ -35,9 +40,10 @@ void _sendRequest(String type, {String? detail}) async {
   String finalDetail = detail ?? 'General';
   
   try {
+    // This is the call that is failing due to the browser block.
     await FirebaseFirestore.instance.collection('requests').add({
       'type': finalType,
-      'detail': finalDetail, // Stores the specific items selected (e.g., "Coke x2, Water x1")
+      'detail': finalDetail, 
       'status': 'Pending',
       'timestamp': FieldValue.serverTimestamp(),
       'table': table,
@@ -53,10 +59,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // We use SelectScreen as the initial home screen for the customer view.
-    return const MaterialApp(
+    // FIX: MaterialApp must NOT be constant due to the non-constant SelectScreen in routes.
+    return MaterialApp( 
       debugShowCheckedModeBanner: false,
-      home: SelectScreen(),
+      initialRoute: '/',
+      routes: {
+        // FIX: Reverted to simple home property for cleaner code, as the routing was complex.
+        '/': (context) => const SelectScreen(), 
+      },
     );
   }
 }
@@ -66,7 +76,6 @@ class SelectScreen extends StatelessWidget {
   const SelectScreen({super.key});
   
   // This URL is publicly accessible after the CORS and IAM fixes.
-  // It is used by the MenuPdfViewerPage to fetch the file data.
   final String menuUrl = 'https://storage.googleapis.com/servicer-c8b1e.firebasestorage.app/Chick-Po%20Menu.pdf';
   
   // Function to navigate to the in-app PDF viewer screen
@@ -168,7 +177,7 @@ class SelectScreen extends StatelessWidget {
             // Navigate to the hardcoded EmployeeLoginPage
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const EmployeeLoginPage()),
+              MaterialPageRoute(builder: (context) => const RoleLoginPage()),
             );
           },
           label: const Text(
