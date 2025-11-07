@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 class ItemCounter extends StatefulWidget {
   final String itemName;
   final int initialQuantity;
-  final ValueChanged<int>? onQuantityChanged;
+  final ValueChanged<int> onQuantityChanged;
 
   const ItemCounter({
     super.key,
     required this.itemName,
-    this.initialQuantity = 0,
-    this.onQuantityChanged,
+    required this.initialQuantity,
+    required this.onQuantityChanged,
   });
 
   @override
@@ -17,58 +17,49 @@ class ItemCounter extends StatefulWidget {
 }
 
 class _ItemCounterState extends State<ItemCounter> {
-  late int _qty;
+  late int _quantity;
 
   @override
   void initState() {
     super.initState();
-    _qty = widget.initialQuantity;
+    _quantity = widget.initialQuantity;
   }
 
-  void _increment() {
-    setState(() => _qty++);
-    widget.onQuantityChanged?.call(_qty);
-  }
-
-  void _decrement() {
-    if (_qty == 0) return;
-    setState(() => _qty--);
-    widget.onQuantityChanged?.call(_qty);
+  void _updateQuantity(int newQty) {
+    if (newQty >= 0) {
+      setState(() {
+        _quantity = newQty;
+      });
+      widget.onQuantityChanged(newQty);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Item label
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: const [
-              BoxShadow(color: Colors.black26, blurRadius: 6, spreadRadius: 1),
-            ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              widget.itemName,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
           ),
-          child: Text(widget.itemName, style: const TextStyle(fontSize: 16)),
-        ),
-        const SizedBox(width: 12),
-
-        IconButton(icon: const Icon(Icons.remove), onPressed: _qty > 0 ? _decrement : null),
-        IconButton(icon: const Icon(Icons.add), onPressed: _increment),
-
-        Container(
-          width: 60,
-          height: 40,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.blue, width: 2),
-            borderRadius: BorderRadius.circular(8),
+          IconButton(
+            icon: const Icon(Icons.remove_circle_outline),
+            onPressed: _quantity > 0 ? () => _updateQuantity(_quantity - 1) : null,
           ),
-          child: Text('$_qty', style: const TextStyle(fontSize: 18)),
-        ),
-      ],
+          Text(
+            '$_quantity',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            onPressed: () => _updateQuantity(_quantity + 1),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'employer_dashboard.dart';           
+import 'employer_dashboard.dart';
 import 'item_selection_page.dart';
 import '../Utils/selection_tools.dart';
-import 'pdf_menu_page.dart';
-import 'role_login_page.dart';              
+
 
 class SelectScreen extends StatefulWidget {
   const SelectScreen({super.key});
@@ -19,16 +18,18 @@ class SelectScreen extends StatefulWidget {
 class _SelectScreenState extends State<SelectScreen> {
   @override
   Widget build(BuildContext context) {
+    
     final double bottomInset = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Selection Page"),
+        title: Text("Selection Page"),
         backgroundColor: Colors.blue,
         centerTitle: true,
-      ),
-      body: Stack(
+      ),      
+ body: Stack(
         children: [
+          // Your existing page content
           Positioned.fill(
             child: SafeArea(
               child: Center(
@@ -42,10 +43,9 @@ class _SelectScreenState extends State<SelectScreen> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => ItemsSelectionPage(
-                                title: 'Drinks',
-                                items: SelectScreen.drinks,
+                            MaterialPageRoute(builder: (context) => ItemsSelectionPage(
+                              title: 'Drinks',
+                              items: SelectScreen.drinks,
                               ),
                             ),
                           );
@@ -62,10 +62,9 @@ class _SelectScreenState extends State<SelectScreen> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => ItemsSelectionPage(
-                                title: 'Desserts',
-                                items: SelectScreen.desserts,
+                            MaterialPageRoute(builder: (context) => ItemsSelectionPage(
+                              title: 'Desserts',
+                              items: SelectScreen.desserts,
                               ),
                             ),
                           );
@@ -82,12 +81,10 @@ class _SelectScreenState extends State<SelectScreen> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => ItemsSelectionPage(
-                                title: 'Extras',
-                                items: SelectScreen.extras,
-                              ),
-                            ),
+                            MaterialPageRoute(builder: (context) => ItemsSelectionPage(
+                              title: 'Extras',
+                              items: SelectScreen.extras
+                            )),
                           );
                         },
                         child: const Text("Extras"),
@@ -104,38 +101,22 @@ class _SelectScreenState extends State<SelectScreen> {
                         key: const Key("Call-server"),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: 250,
-                      height: 60,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const PdfMenuPage(),
-                            ),
-                          );
-                        },
-                        child: const Text("View Menu"),
-                        key: const Key("Menu-button"),
-                      ),
-                    ),
+                    
                     SizedBox(height: 24 + bottomInset),
                   ],
                 ),
               ),
             ),
           ),
+
           Positioned(
             bottom: 10 + bottomInset,
             right: 10,
             child: FloatingActionButton.extended(
               onPressed: () {
-                // 👇 CHANGE: go to RoleLoginPage (Server or Manager)
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const RoleLoginPage()),
+                  MaterialPageRoute(builder: (context) => const EmployerDashboardPage()),
                 );
               },
               label: const Text(

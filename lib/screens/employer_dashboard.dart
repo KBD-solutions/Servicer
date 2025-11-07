@@ -1,4 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+/*
+  This page serves as the Employer/Server dashboard.
+  It displays real-time requests from the database, split into two tabs: Live and History.
+*/
+
+// I used an enum to mark the status of a request, matching your Firestore strings.
+// Enums are useful for mapping internal states to database string values.
+enum RequestStatus {
+  pending('Pending'),
+  inProgress('In-Progress'),
+  done('Done');
+
+  final String firestoreValue;
+  const RequestStatus(this.firestoreValue);
+}
+
+// Function to update the status of a request in Firebase (called by 'Start' and 'Done' buttons)
+void updateRequestStatus(String docId, RequestStatus status) {
+  FirebaseFirestore.instance
+      .collection('requests')
+      .doc(docId)
+      .update({'status': status.firestoreValue});
+}
+
+// Function to delete a 'Done' request from history
+void deleteRequest(String docId) {
+  FirebaseFirestore.instance
+      .collection('requests')
+      .doc(docId)
+      .delete();
+}
 
 /*
   I made this page to be the "Employer / Server" dashboard.
@@ -54,25 +87,11 @@ class EmployerDashboardPage extends StatefulWidget {
 
 class _EmployerDashboardPageState extends State<EmployerDashboardPage>
     with SingleTickerProviderStateMixin {
-
-  // This controller makes the two tabs at the top work (Live / History).
-  // I didn't know I needed "with SingleTickerProviderStateMixin" until I googled tabs in Flutter.
+  // This TabController makes the two tabs (Live / History) work.
+  // We needed "with SingleTickerProviderStateMixin" for this functionality.
   late TabController _tab;
-
-  // filter chip text I selected. Starts at "All".
-  String _filter = 'All';
-
-  // Just some fake data so the page doesn't look empty.
-  // Later I will replace this with real data.
-  List<Request> _requests = const [
-    Request(table: 5, type: 'Refills',  detail: 'Coke',        time: '2m ago',  status: RequestStatus.pending),
-    Request(table: 3, type: 'Desserts', detail: 'Brownie',     time: '5m ago',  status: RequestStatus.inProgress),
-    Request(table: 7, type: 'Extras',   detail: 'Ranch',       time: '1m ago',  status: RequestStatus.pending),
-    Request(table: 2, type: 'Call Server', detail: 'Check bill', time: '8m ago',  status: RequestStatus.done),
-    Request(table: 1, type: 'Refills',  detail: 'Iced Tea',    time: '30s ago', status: RequestStatus.pending),
-  ];
-
-  bool _soundOn = true; // extra small feature: pretend we can mute/unmute alerts
+  // Here we keep track of which filter chip is selected.
+  String _filter = 'All'; 
 
   @override
   void initState() {
@@ -82,79 +101,99 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
 
   @override
   void dispose() {
-    _tab.dispose(); // close the controller when leaving page
+    _tab.dispose(); // Close the controller when leaving the page
     super.dispose();
   }
 
-  // Small helper functions (I prefer plain functions instead of fancy getters here).
-  List<Request> liveItems() {
-    final onlyLive = _requests.where((r) => r.status != RequestStatus.done);
-    if (_filter == 'All') return onlyLive.toList();
-    return onlyLive.where((r) => r.type == _filter).toList();
+  // Live Requests Query: Fetches all Pending/In-Progress requests, ordered by status and time.
+  Stream<QuerySnapshot> liveRequestsStream() {
+    Query query = FirebaseFirestore.instance
+        .collection('requests')
+        .where('status', whereIn: [
+          RequestStatus.pending.firestoreValue,
+          RequestStatus.inProgress.firestoreValue
+        ])
+        .orderBy('status')
+        .orderBy('timestamp', descending: true); // Primary sorting for new requests first
+
+    // We filter by 'type' LOCALLY in the StreamBuilder to avoid complex Firebase indexing rules.
+    return query.snapshots();
   }
 
-  List<Request> historyItems() {
-    return _requests.where((r) => r.status == RequestStatus.done).toList();
+  // History Requests Query: Fetches only 'Done' requests.
+  Stream<QuerySnapshot> historyRequestsStream() {
+    return FirebaseFirestore.instance
+        .collection('requests')
+        .where('status', isEqualTo: RequestStatus.done.firestoreValue)
+        .orderBy('timestamp', descending: true)
+        .snapshots();
   }
 
-  int pendingCount() =>
-      _requests.where((r) => r.status == RequestStatus.pending).length;
+  // Function to calculate counts for the top cards (Uses all requests stream for metric accuracy)
+  Widget _buildMetricCards(ColorScheme scheme) {
+    return StreamBuilder<QuerySnapshot>(
+      // Fetches ALL requests to accurately count Pending, In-Progress, and Done.
+      stream: FirebaseFirestore.instance.collection('requests').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
 
-  int inProgressCount() =>
-      _requests.where((r) => r.status == RequestStatus.inProgress).length;
+        final docs = snapshot.data!.docs;
+        
+        final pendingCount = docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>?;
+          return data?['status'] == RequestStatus.pending.firestoreValue;
+        }).length;
+        
+        final inProgressCount = docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>?;
+          return data?['status'] == RequestStatus.inProgress.firestoreValue;
+        }).length;
 
-  int doneCount() =>
-      _requests.where((r) => r.status == RequestStatus.done).length;
+        final doneCount = docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>?;
+          return data?['status'] == RequestStatus.done.firestoreValue;
+        }).length;
 
-  // When I click Start or Done, I change the status here.
-  void changeStatus(Request req, RequestStatus status) {
-    final i = _requests.indexOf(req);
-    if (i < 0) return; // not found, just return
-    setState(() {
-      final copy = List<Request>.from(_requests);
-      copy[i] = copy[i].copyWith(status: status);
-      _requests = copy;
-    });
-    // This message at the bottom is just to show it worked
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Table ${req.table}: ${status.name}')),
-    );
-  }
-
-  // tiny extra: remove all "done" items from the history
-  void clearDone() {
-    setState(() {
-      _requests = _requests.where((r) => r.status != RequestStatus.done).toList();
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Cleared completed items')),
-    );
-  }
-
-  // tiny extra: not a real refresh, just a snackbar so it feels interactive
-  void fakeRefresh() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Refreshed • sound ${_soundOn ? "ON" : "OFF"}')),
+        return Row(
+          children: [
+            _metricCard(
+              color: scheme.primaryContainer,
+              label: 'Pending',
+              value: pendingCount.toString(),
+              icon: Icons.hourglass_bottom,
+            ),
+            _metricCard(
+              color: scheme.tertiaryContainer,
+              label: 'In-Progress',
+              value: inProgressCount.toString(),
+              icon: Icons.run_circle_outlined,
+            ),
+            _metricCard(
+              color: scheme.secondaryContainer,
+              label: 'Done',
+              value: doneCount.toString(),
+              icon: Icons.check_circle,
+            ),
+          ],
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final scheme = Theme.of(context).colorScheme; // This gives us the app colors
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Employer Dashboard'),
-        actions: [
-          // a simple sound toggle (not real audio, just a boolean for now)
-          Row(
-            children: [
-              const Text('Sound', style: TextStyle(fontSize: 12)),
-              Switch(
-                value: _soundOn,
-                onChanged: (v) => setState(() => _soundOn = v),
-              ),
-            ],
+        // Top right actions (Notification and Profile Icons)
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 8),
+            child: Icon(Icons.notifications_none),
           ),
           IconButton(
             tooltip: 'Refresh',
@@ -166,6 +205,7 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
             child: CircleAvatar(child: Icon(Icons.person)),
           ),
         ],
+        // Tab bar at the bottom of the app bar
         bottom: TabBar(
           controller: _tab,
           tabs: const [
@@ -174,41 +214,19 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
           ],
         ),
       ),
-
       body: TabBarView(
         controller: _tab,
         children: [
-          // ================= LIVE TAB =================
+          // TAB 1: LIVE
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // --- three small KPI cards at the top ---
-                Row(
-                  children: [
-                    metricCard(
-                      color: scheme.primaryContainer,
-                      label: 'Pending',
-                      value: pendingCount().toString(),
-                      icon: Icons.hourglass_bottom,
-                    ),
-                    metricCard(
-                      color: scheme.tertiaryContainer,
-                      label: 'In-Progress',
-                      value: inProgressCount().toString(),
-                      icon: Icons.run_circle_outlined,
-                    ),
-                    metricCard(
-                      color: scheme.secondaryContainer,
-                      label: 'Done',
-                      value: doneCount().toString(),
-                      icon: Icons.check_circle,
-                    ),
-                  ],
-                ),
+                // Three small KPI cards at the top
+                _buildMetricCards(scheme),
                 const SizedBox(height: 12),
 
-                // --- filters (they just change which ones show) ---
+                // Filters (change the local filter state)
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -227,119 +245,156 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
                 ),
                 const SizedBox(height: 12),
 
-                // --- the live list ---
+                // Live Requests List StreamBuilder
                 Expanded(
-                  child: liveItems().isEmpty
-                      ? const Center(child: Text('No live requests'))
-                      : ListView.separated(
-                          itemCount: liveItems().length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
-                          itemBuilder: (context, i) {
-                            final r = liveItems()[i];
-                            return Card(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    tableAvatar(r.table, scheme),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text('${r.type} • ${r.detail}',
-                                              style: Theme.of(context).textTheme.titleMedium),
-                                          const SizedBox(height: 4),
-                                          Text(r.time,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(color: scheme.outline)),
-                                          const SizedBox(height: 8),
-                                          statusChip(r.status, scheme),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        OutlinedButton(
-                                          onPressed: () => changeStatus(r, RequestStatus.inProgress),
-                                          child: const Text('Start'),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        FilledButton(
-                                          onPressed: () => changeStatus(r, RequestStatus.done),
-                                          child: const Text('Done'),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: liveRequestsStream(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      
+                      // Check for errors (helps with debugging network/rule issues)
+                      if (snapshot.hasError) {
+                          debugPrint('Firestore Stream Error: ${snapshot.error}'); 
+                          return Center(
+                            child: Text(
+                              'Error: ${snapshot.error}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          );
+                      }
+                      
+                      // 1. Get all live documents
+                      var allLiveDocs = snapshot.data?.docs ?? [];
+                      
+                      // 2. Filter the documents LOCALLY based on the selected chip
+                      var filteredDocs = allLiveDocs.where((doc) {
+                        final docType = doc['type'] as String?;
+                        
+                        if (_filter == 'All') {
+                          return true;
+                        }
+                        // Handles cases where 'type' might be null or missing
+                        return docType == _filter;
+                      }).toList();
+                      
+                      // 3. Check for empty AFTER local filter
+                      if (filteredDocs.isEmpty) {
+                         return Center(
+                          child: Text(
+                            // Provides context for the 'No requests' message
+                            _filter == 'All' ? 'No live requests.' : 'No live $_filter requests.',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        );
+                      }
+
+                      // 4. Build the list of request cards
+                      return ListView.separated(
+                        itemCount: filteredDocs.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final req = filteredDocs[index];
+                          final docId = req.id;
+                          final type = req['type'] as String? ?? 'N/A';
+                          final detail = req['detail'] as String? ?? 'No details provided'; 
+                          final table = req['table'] as String? ?? 'N/A';
+                          // Safely get statusValue, defaulting to 'Pending' if missing
+                          final statusValue = req['status'] as String? ?? 'Pending'; 
+                          final status = RequestStatus.values.firstWhere(
+                            (s) => s.firestoreValue == statusValue,
+                            orElse: () => RequestStatus.pending,
+                          );
+
+                          return _buildRequestCard(
+                            docId: docId,
+                            type: type,
+                            detail: detail,
+                            table: table,
+                            status: status,
+                            scheme: Theme.of(context).colorScheme,
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
           ),
 
-          // ================= HISTORY TAB =================
+          // TAB 2: HISTORY
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
                 Align(
                   alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: historyItems().isEmpty ? null : clearDone,
-                    icon: const Icon(Icons.delete_outline),
-                    label: const Text('Clear Done'),
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: historyRequestsStream(),
+                    builder: (context, snapshot) {
+                      final hasHistory = snapshot.hasData && snapshot.data!.docs.isNotEmpty;
+                      return TextButton.icon(
+                        // tiny extra: remove all "done" items from the history
+                        onPressed: hasHistory ? () async {
+                           // Clear all 'Done' requests.
+                           final batch = FirebaseFirestore.instance.batch();
+                           for (final doc in snapshot.data!.docs) {
+                             batch.delete(doc.reference);
+                           }
+                           await batch.commit();
+                           ScaffoldMessenger.of(context).showSnackBar(
+                             const SnackBar(content: Text('Cleared completed items')),
+                           );
+                        } : null,
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text('Clear Done'),
+                      );
+                    }
                   ),
                 ),
                 Expanded(
-                  child: Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: historyItems().isEmpty
-                        ? const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(24.0),
-                              child: Text('No completed requests yet'),
-                            ),
-                          )
-                        : SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: DataTable(
-                              columns: const [
-                                DataColumn(label: Text('Table')),
-                                DataColumn(label: Text('Type')),
-                                DataColumn(label: Text('Detail')),
-                                DataColumn(label: Text('When')),
-                                DataColumn(label: Text('Status')),
-                              ],
-                              rows: historyItems()
-                                  .map(
-                                    (r) => DataRow(
-                                      cells: [
-                                        DataCell(Text('#${r.table}')),
-                                        DataCell(Text(r.type)),
-                                        DataCell(Text(r.detail)),
-                                        DataCell(Text(r.time)),
-                                        DataCell(Text(r.status.name)),
-                                      ],
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: historyRequestsStream(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(24.0),
+                            child: Text('No completed requests yet'),
                           ),
+                        );
+                      }
+
+                      final docs = snapshot.data!.docs;
+                      // Display history as a simple list (or could use DataTable later)
+                      return ListView.builder(
+                        itemCount: docs.length,
+                        itemBuilder: (context, index) {
+                          final req = docs[index];
+                          final type = req['type'] as String? ?? 'N/A';
+                          final detail = req['detail'] as String? ?? '';
+                          final table = req['table'] as String? ?? 'N/A';
+                          final timestamp = req['timestamp'] as Timestamp?;
+                          final timeAgo = timestamp != null
+                              ? _timeSince(timestamp)
+                              : 'just now';
+
+                          return ListTile(
+                            leading: _tableAvatar(table, scheme),
+                            title: Text('$type - $table'),
+                            subtitle: Text(detail),
+                            trailing: Text(timeAgo),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
               ],
@@ -350,10 +405,77 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
     );
   }
 
-  // ----------- small UI helper widgets below -----------
-  // I wrote these to not repeat the same code many times.
+  // Helper to format time (simplified)
+  String _timeSince(Timestamp timestamp) {
+    final duration = DateTime.now().difference(timestamp.toDate());
+    if (duration.inMinutes < 1) return 'just now';
+    if (duration.inHours < 1) return '${duration.inMinutes}m ago';
+    if (duration.inDays < 1) return '${duration.inHours}h ago';
+    return '${duration.inDays}d ago';
+  }
 
-  Widget metricCard({
+
+  // --- UI helper widgets below ---
+
+  // Request Card with Start/Done buttons
+  Widget _buildRequestCard({
+    required String docId,
+    required String type,
+    required String detail,
+    required String table,
+    required RequestStatus status,
+    required ColorScheme scheme,
+  }) {
+    return Card(
+      // Uses the friend's nice card shape
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _tableAvatar(table, scheme),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('$type • $detail',
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Text('Table: $table',
+                      style: Theme.of(context).textTheme.bodySmall),
+                  const SizedBox(height: 8),
+                  _statusChip(status, scheme),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            // The Start and Done buttons that trigger Firebase updates
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (status != RequestStatus.inProgress)
+                  OutlinedButton(
+                    onPressed: () => updateRequestStatus(docId, RequestStatus.inProgress),
+                    child: const Text('Start'),
+                  ),
+                const SizedBox(width: 8),
+                if (status != RequestStatus.done)
+                  FilledButton(
+                    onPressed: () => updateRequestStatus(docId, RequestStatus.done),
+                    child: const Text('Done'),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Metric Card (Pending, In-Progress, Done boxes)
+  Widget _metricCard({
     required Color color,
     required String label,
     required String value,
@@ -369,13 +491,19 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
             children: [
               Icon(icon),
               const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: const TextStyle(fontSize: 12)),
-                  Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-                ],
-              ),
+              // FIX: Wrap text in Expanded to prevent RenderFlex overflow
+              Expanded( 
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: const TextStyle(fontSize: 12)),
+                    Text(
+                      value,
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ), // Added Expanded here
             ],
           ),
         ),
@@ -383,20 +511,21 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
     );
   }
 
-  Widget tableAvatar(int table, ColorScheme scheme) {
+  Widget _tableAvatar(String table, ColorScheme scheme) {
     return CircleAvatar(
       radius: 22,
       backgroundColor: scheme.primaryContainer,
-      child: Text('T$table', style: const TextStyle(fontWeight: FontWeight.bold)),
+      // I picked CircleAvatar because it's quick and looks clean.
+      child: Text(table, style: const TextStyle(fontWeight: FontWeight.bold)),
     );
-    // I picked CircleAvatar because it's quick and looks clean.
   }
 
-  Widget statusChip(RequestStatus status, ColorScheme scheme) {
-    // choose colors and text based on status
+  // Helper to visually style the request status
+  Widget _statusChip(RequestStatus status, ColorScheme scheme) {
     Color bg;
     Color fg;
     String text;
+    // choose colors and text based on status
     if (status == RequestStatus.pending) {
       bg = scheme.errorContainer;
       fg = scheme.onErrorContainer;

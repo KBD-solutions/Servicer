@@ -4,7 +4,7 @@ import '../Utils/item_counter.dart';
 class ItemsSelectionPage extends StatefulWidget {
   final String title;
   final List<String> items;
-  final Map<String, int>? initialQuantities; // optional (for editing an order)
+  final Map<String, int>? initialQuantities;
 
   const ItemsSelectionPage({
     super.key,
@@ -23,7 +23,6 @@ class _ItemsSelectionPageState extends State<ItemsSelectionPage> {
   @override
   void initState() {
     super.initState();
-    // start with zeros for all items, then apply any provided initial quantities
     _order = {for (final name in widget.items) name: 0};
     if (widget.initialQuantities != null) {
       for (final entry in widget.initialQuantities!.entries) {
@@ -33,7 +32,7 @@ class _ItemsSelectionPageState extends State<ItemsSelectionPage> {
   }
 
   void _confirm() {
-    // return the map to the previous screen (or show a summary)
+    // Returns the map of selected items to the previous screen (SelectScreen)
     Navigator.pop(context, _order);
   }
 

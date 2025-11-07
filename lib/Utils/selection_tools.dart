@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
-
 class PopupUtils {
-  /// Shows a temporary dialog letting the customer know a server is on the way
+  /// Shows a temporary dialog letting the customer know a server is on the way.
+  /// This dialog automatically closes after 2 seconds.
   static Future<void> showServerOnTheWay(BuildContext context) async {
     showDialog(
       context: context,
-      barrierDismissible: false,
+      // Prevents dialog from being dismissed by tapping outside
+      barrierDismissible: false, 
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: Column(
@@ -30,10 +31,13 @@ class PopupUtils {
 
     // Wait for 2 seconds, close dialog, show snackbar
     await Future.delayed(const Duration(seconds: 2));
+    
+    // Check if the widget is still mounted before trying to pop
     if (Navigator.of(context, rootNavigator: true).canPop()) {
       Navigator.of(context, rootNavigator: true).pop();
     }
 
+    // Show the small confirmation message at the bottom
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Server is on the way!'),
@@ -42,15 +46,3 @@ class PopupUtils {
     );
   }
 }
-
-class _Drink{
-  final String name;
-  int amount;
-  _Drink(this.name, {this.amount = 0});
-}
-
-final List<_Drink> drinks = [
-  _Drink('Sprite'),
-  _Drink('Fanta'),
-  _Drink('CocaCola')
-];
