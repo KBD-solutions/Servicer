@@ -33,51 +33,6 @@ void deleteRequest(String docId) {
       .delete();
 }
 
-/*
-  I made this page to be the "Employer / Server" dashboard.
-  It has two tabs: Live (things happening now) and History (things already done).
-  I tried to keep the code simple and added notes so I can remember later.
-*/
-
-// I used an enum to mark the status of a request.
-// I didn't know this at first so I looked it up: enums are just a small list of options.
-enum RequestStatus { pending, inProgress, done }
-
-// This is just a small "data box" to store each request on the screen.
-class Request {
-  final int table;        // like table number (ex: 5)
-  final String type;      // "Refills", "Desserts", "Extras", "Call Server"
-  final String detail;    // more info (ex: "Coke")
-  final String time;      // when it came in (ex: "2m ago")
-  final RequestStatus status;
-
-  const Request({
-    required this.table,
-    required this.type,
-    required this.detail,
-    required this.time,
-    required this.status,
-  });
-
-  // copyWith is just a quick way to make a new Request with one field changed.
-  // I had to search this pattern because I forgot how to do it.
-  Request copyWith({
-    int? table,
-    String? type,
-    String? detail,
-    String? time,
-    RequestStatus? status,
-  }) {
-    return Request(
-      table: table ?? this.table,
-      type: type ?? this.type,
-      detail: detail ?? this.detail,
-      time: time ?? this.time,
-      status: status ?? this.status,
-    );
-  }
-}
-
 class EmployerDashboardPage extends StatefulWidget {
   const EmployerDashboardPage({super.key});
 
@@ -195,12 +150,7 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
             padding: EdgeInsets.only(right: 8),
             child: Icon(Icons.notifications_none),
           ),
-          IconButton(
-            tooltip: 'Refresh',
-            icon: const Icon(Icons.refresh),
-            onPressed: fakeRefresh,
-          ),
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(right: 12),
             child: CircleAvatar(child: Icon(Icons.person)),
           ),
@@ -231,7 +181,7 @@ class _EmployerDashboardPageState extends State<EmployerDashboardPage>
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      for (final f in const ['All','Refills','Desserts','Extras','Call Server'])
+                      for (final f in const ['All', 'Refills', 'Desserts', 'Extras', 'Call Server'])
                         Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: ChoiceChip(
