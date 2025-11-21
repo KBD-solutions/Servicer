@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart'; 
-import 'dart:html' as html;
 import 'firebase_options.dart'; 
 import 'screens/employee_login.dart'; 
 import 'screens/employer_dashboard.dart'; 
@@ -133,7 +132,8 @@ class SelectScreen extends StatelessWidget {
             _buildSelectButton(
               context,
               'View Menu',
-              () => _showMenuPdf(context), 
+              () => _showMenuPdf(context),
+              key: const Key("Menu-button"),
             ),
             
             // Refills button: opens selection screen
@@ -141,16 +141,19 @@ class SelectScreen extends StatelessWidget {
               context,
               'Refills',
               () => _navigateToItemSelection(context, 'Refills', const ['Coke', 'Sprite', 'Iced Tea', 'Water']),
+              key: const Key("Refills-button"),
             ),
             _buildSelectButton(
               context,
               'Desserts',
               () => _navigateToItemSelection(context, 'Desserts', const ['Brownie', 'Ice Cream', 'Cheesecake']),
+              key: const Key("Desserts-button"),
             ),
             _buildSelectButton(
               context,
               'Extras',
               () => _navigateToItemSelection(context, 'Extras', const ['Ketchup', 'Mustard', 'Ranch', 'Napkins']),
+              key: const Key("Extras-button"),
             ),
             
             // UPDATED: Call Server button uses the popup utility
@@ -193,13 +196,14 @@ class SelectScreen extends StatelessWidget {
   }
 
   // Helper widget for a consistent button style
-  Widget _buildSelectButton(BuildContext context, String text, VoidCallback onPressed) {
+  Widget _buildSelectButton(BuildContext context, String text, VoidCallback onPressed, {Key? key}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: SizedBox(
         width: 250,
         height: 60,
         child: ElevatedButton(
+          key: key,
           onPressed: onPressed,
           child: Text(text),
         ),

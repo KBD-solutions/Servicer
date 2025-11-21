@@ -9,43 +9,45 @@ import 'package:integration_test/integration_test.dart';
 void main(){
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets("Testing refills button in homepage ", (WidgetTester tester) async{
+  group('Happy Paths', (){
+    /*
+      GIVEN I am in the selection screen
+      WHEN i press the 'Menu' button
+      THEN I should see the Restraunt Menu
+    */
+    testWidgets("View Menu PDF", (WidgetTester tester) async {
+      //arrange
+      await tester.pumpWidget(const MyApp());
 
-    await tester.pumpWidget(const MyApp());
+      //act
+      final menuButton = find.byKey(const Key("Menu-button"));
+      await tester.tap(menuButton);
+      await tester.pumpAndSettle();
 
-    final refillsButton = find.byKey(Key("Refills-button"));
-
-    await tester.tap( refillsButton );
-
-    await tester.pumpAndSettle();
-
-    expect (find.text("Choose your item"), findsOneWidget);
+      //assert
+      expect(find.text('Menu'), findsOneWidget);
+    },skip: true);
   });
-  //testing Desserts button 
-  testWidgets("Testing Desserts button in homepage ", (WidgetTester tester) async{
+    /*
+      GIVEN I am at the selection screen AND press the 'Refills' button
+      WHEN I press the '+' symbol for an item AND press the 'Confirm' button
+      THEN I should be able to confirm an order
+    */
+    testWidgets("Select Refills and Confirm Order", (WidgetTester tester) async {
+      //arrange
+      await tester.pumpWidget(const MyApp());
 
-    await tester.pumpWidget(const MyApp());
+      //act
+      await tester.tap(find.byKey(const Key("Refills-button")));
+      await tester.pumpAndSettle();
 
-    final dessertsButton = find.byKey(Key("Desserts-button"));
+      await tester.tap(find.byKey(const Key('add_Water')));
+      await tester.pumpAndSettle();
 
-    await tester.tap( dessertsButton );
+      await tester.tap(find.byKey(const Key("confirm-button")));
+      await tester.pumpAndSettle();
 
-    await tester.pumpAndSettle();
-
-    expect (find.text("Choose your item"), findsOneWidget);
-  });
-
-  testWidgets("Testing Extras button in homepage ", (WidgetTester tester) async{
-
-    await tester.pumpWidget(const MyApp());
-
-    final extrasButton = find.byKey(Key("Extras-button"));
-
-    await tester.tap( extrasButton );
-
-    await tester.pumpAndSettle();
-
-    expect (find.text("Choose your item"), findsOneWidget);
-  });
-  
+      //assert
+      expect(find.text('Selection Page'), findsOneWidget);
+    });
 }

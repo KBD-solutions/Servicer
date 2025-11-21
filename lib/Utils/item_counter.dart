@@ -47,6 +47,7 @@ class _ItemCounterState extends State<ItemCounter> {
             ),
           ),
           IconButton(
+            key: ValueKey('remove_${widget.itemName}'),
             icon: const Icon(Icons.remove_circle_outline),
             onPressed: _quantity > 0 ? () => _updateQuantity(_quantity - 1) : null,
           ),
@@ -55,8 +56,10 @@ class _ItemCounterState extends State<ItemCounter> {
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           IconButton(
+            key: ValueKey('add_${widget.itemName}'),
             icon: const Icon(Icons.add_circle_outline),
             onPressed: () => _updateQuantity(_quantity + 1),
+            
           ),
         ],
       ),
