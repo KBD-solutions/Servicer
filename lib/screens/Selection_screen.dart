@@ -234,11 +234,14 @@ class _SelectScreenState extends State<SelectScreen> {
               Icon(icon, size: 20),
               const SizedBox(width: 8),
             ],
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
+            Flexible(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],

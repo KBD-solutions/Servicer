@@ -53,7 +53,6 @@ class _ItemsSelectionPageState extends State<ItemsSelectionPage> {
             final name = widget.items[index];
             final initial = _order[name] ?? 0;
             return ItemCounter(
-              key: ValueKey('counter_$name'),
               itemName: name,
               initialQuantity: initial,
               onQuantityChanged: (qty) => _order[name] = qty,
@@ -64,7 +63,8 @@ class _ItemsSelectionPageState extends State<ItemsSelectionPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _confirm,
         icon: const Icon(Icons.check),
-        label: const Text('Confirm'),
+        label: const Text('confirm'),
+        key: const Key("confirm-button"),
       ),
     );
   }
