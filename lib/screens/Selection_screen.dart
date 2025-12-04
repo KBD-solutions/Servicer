@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'employer_dashboard.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'item_selection_page.dart';
 import '../Utils/selection_tools.dart';
-
+import 'role_login_page.dart'; // go to role login (server / manager)
 
 class SelectScreen extends StatefulWidget {
   const SelectScreen({super.key});
@@ -16,92 +17,160 @@ class SelectScreen extends StatefulWidget {
 }
 
 class _SelectScreenState extends State<SelectScreen> {
+  // --- helper to send request to Firestore (same idea as in main.dart) ---
+  Future<void> _sendRequest(String type, {String? detail}) async {
+    // for now we just hard-code a table; later this can come from QR code etc.
+    const table = 'Table 5';
+    final finalType = type;
+    final finalDetail = detail ?? 'General';
+
+    try {
+      await FirebaseFirestore.instance.collection('requests').add({
+        'type': finalType,
+        'detail': finalDetail,
+        'status': 'Pending', // must match EmployerDashboard enum strings
+        'timestamp': FieldValue.serverTimestamp(),
+        'table': table,
+      });
+      
+      print('Request $finalType sent: $finalDetail');
+    } catch (e) {
+      print('Error sending request: $e');
+    }
+  }
+
+  //  helper: open item selection screen, then send request when user comes back ---
+  Future<void> _navigateToItemSelection(
+      String title, List<String> items) async {
+    // go to the selection page and wait for user to pick stuff
+    final Map<String, int>? result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ItemsSelectionPage(
+          title: title,
+          items: items,
+        ),
+      ),
+    );
+
+    // if user pressed back with data
+    if (result != null && result.isNotEmpty) {
+      // build a string like "Coke x2, Sprite x1"
+      final selectedItems = result.entries
+          .where((e) => e.value > 0)
+          .map((e) => '${e.key} x${e.value}')
+          .join(', ');
+
+      if (selectedItems.isNotEmpty) {
+        await _sendRequest(title, detail: selectedItems);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$title request sent: $selectedItems')),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No items selected')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    
     final double bottomInset = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F4FF), // soft clean background
+
       appBar: AppBar(
-        title: Text("Selection Page"),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.deepPurple.shade400,
+        elevation: 2,
         centerTitle: true,
-      ),      
- body: Stack(
+        title: const Text(
+          "👋 Hey Waiter!",
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      ),
+
+      body: Stack(
         children: [
-          // Your existing page content
           Positioned.fill(
             child: SafeArea(
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(
-                      width: 250,
-                      height: 60,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => ItemsSelectionPage(
-                              title: 'Drinks',
-                              items: SelectScreen.drinks,
-                              ),
-                            ),
-                          );
-                        },
-                        child: const Text("Refills"),
-                        key: const Key("Refills-button"),
+                    const Text(
+                      "Choose an option to continue",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.black54,
                       ),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // ------------ Refills ------------
+                    buildMainButton(
+                      label: "Refills",
+                      icon: Icons.local_drink_outlined,
+                      keyValue: "Refills-button",
+                      onTap: () {
+                        _navigateToItemSelection(
+                          'Refills',
+                          SelectScreen.drinks,
+                        );
+                      },
                     ),
                     const SizedBox(height: 20),
-                    SizedBox(
-                      width: 250,
-                      height: 60,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => ItemsSelectionPage(
-                              title: 'Desserts',
-                              items: SelectScreen.desserts,
-                              ),
-                            ),
-                          );
-                        },
-                        child: const Text("Desserts"),
-                        key: const Key("Desserts-button"),
-                      ),
+
+                    // ------------ Desserts ------------
+                    buildMainButton(
+                      label: "Desserts",
+                      icon: Icons.cake_outlined,
+                      keyValue: "Desserts-button",
+                      onTap: () {
+                        _navigateToItemSelection(
+                          'Desserts',
+                          SelectScreen.desserts,
+                        );
+                      },
                     ),
                     const SizedBox(height: 20),
-                    SizedBox(
-                      width: 250,
-                      height: 60,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => ItemsSelectionPage(
-                              title: 'Extras',
-                              items: SelectScreen.extras
-                            )),
-                          );
-                        },
-                        child: const Text("Extras"),
-                        key: const Key("Extras-button"),
-                      ),
+
+                    // ------------ Extras ------------
+                    buildMainButton(
+                      label: "Extras",
+                      icon: Icons.fastfood_outlined,
+                      keyValue: "Extras-button",
+                      onTap: () {
+                        _navigateToItemSelection(
+                          'Extras',
+                          SelectScreen.extras,
+                        );
+                      },
                     ),
                     const SizedBox(height: 20),
-                    SizedBox(
-                      width: 250,
-                      height: 60,
-                      child: ElevatedButton(
-                        onPressed: () => PopupUtils.showServerOnTheWay(context),
-                        child: const Text("Call Server"),
-                        key: const Key("Call-server"),
-                      ),
+
+                    // ------------ Call Server ------------
+                    buildMainButton(
+                      label: "Call Server",
+                      icon: Icons.notifications_active_outlined,
+                      keyValue: "Call-server",
+                      onTap: () async {
+                        // show the little popup first
+                        await PopupUtils.showServerOnTheWay(context);
+                        // then send a simple request to Firestore
+                        await _sendRequest("Call Server",
+                            detail: "General call");
+                      },
                     ),
-                    
+
                     SizedBox(height: 24 + bottomInset),
                   ],
                 ),
@@ -109,14 +178,18 @@ class _SelectScreenState extends State<SelectScreen> {
             ),
           ),
 
+          // ------------- Employer / Staff login -------------
           Positioned(
             bottom: 10 + bottomInset,
             right: 10,
             child: FloatingActionButton.extended(
               onPressed: () {
+                // now goes to the role login page (Server / Manager)
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const EmployerDashboardPage()),
+                  MaterialPageRoute(
+                    builder: (context) => const RoleLoginPage(),
+                  ),
                 );
               },
               label: const Text(
@@ -124,10 +197,55 @@ class _SelectScreenState extends State<SelectScreen> {
                 style: TextStyle(fontSize: 12),
               ),
               icon: const Icon(Icons.lock),
-              backgroundColor: const Color.fromARGB(221, 231, 230, 230),
+              backgroundColor: Colors.deepPurple.shade200,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // --------- Reusable Button Builder ---------
+  Widget buildMainButton({
+    required String label,
+    required String keyValue,
+    required VoidCallback onTap,
+    IconData? icon,
+  }) {
+    return SizedBox(
+      width: 260,
+      height: 58,
+      child: ElevatedButton(
+        key: Key(keyValue),
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.deepPurple.shade600,
+          elevation: 3,
+          shadowColor: Colors.deepPurple.shade100,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 20),
+              const SizedBox(width: 8),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
