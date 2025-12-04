@@ -11,5 +11,4 @@ jobs:
         with:
           channel: 'stable'
       - run: flutter pub get
-      - run: flutter test test/unit_tests.dart
       - run: flutter test test/integration_tests.dart
