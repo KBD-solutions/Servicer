@@ -18,7 +18,8 @@ dependencies:
   cloud_firestore: ^6.0.3
   firebase_messaging: ^16.0.3
   url_launcher: ^6.2.2
-  syncfusion_flutter_pdfviewer: ^31.2.3
+
+  syncfusion_flutter_pdfviewer: ^26.0.0
   pdfx: ^2.9.2
   http: ^1.2.1
 
@@ -28,6 +29,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
   test: ^1.25.8
 
   flutter_lints: ^4.0.0
