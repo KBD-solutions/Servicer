@@ -30,7 +30,6 @@ void main() async {
   runApp(const MyApp());
 }
 
-// Global function to send item requests to Firestore
 void _sendRequest(String type, {String? detail}) async {
   String table = currentTableId;
   String finalType = type;
@@ -42,7 +41,7 @@ void _sendRequest(String type, {String? detail}) async {
       'detail': finalDetail,
       'status': 'Pending',
       'timestamp': FieldValue.serverTimestamp(),
-      'table': 'Table 5',
+      'table': table, // <--- CHANGE THIS (It was 'Table 5')
     });
     debugPrint('Request $finalType sent successfully for $table. Detail: $finalDetail');
   } catch (e) {
