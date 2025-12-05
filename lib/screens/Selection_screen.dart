@@ -86,7 +86,20 @@ class _SelectScreenState extends State<SelectScreen> {
       appBar: AppBar(
         backgroundColor: Colors.deepPurple.shade400,
         elevation: 2,
+        backgroundColor: Colors.deepPurple.shade400,
+        elevation: 2,
         centerTitle: true,
+        title: const Text(
+          "👋 Hey Waiter!",
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      ),
+
+      body: Stack(
         title: const Text(
           "👋 Hey Waiter!",
           style: TextStyle(
@@ -171,6 +184,7 @@ class _SelectScreenState extends State<SelectScreen> {
                       },
                     ),
 
+
                     SizedBox(height: 24 + bottomInset),
                   ],
                 ),
@@ -197,6 +211,7 @@ class _SelectScreenState extends State<SelectScreen> {
                 style: TextStyle(fontSize: 12),
               ),
               icon: const Icon(Icons.lock),
+              backgroundColor: Colors.deepPurple.shade200,
               backgroundColor: Colors.deepPurple.shade200,
             ),
           ),
