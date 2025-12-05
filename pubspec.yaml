@@ -5,14 +5,14 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.2.0 <4.0.00'
+  sdk: '>=3.2.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
 
   cupertino_icons: ^1.0.2
-  flutter_svg: ^2.2.1
+  flutter_svg: ^2.0.17
   firebase_core: ^4.2.0
   firebase_auth: ^6.1.1
   cloud_firestore: ^6.0.3
@@ -22,7 +22,6 @@ dependencies:
   pdfx: ^2.9.2
   http: ^1.2.1
 
-
   integration_test:
     sdk: flutter
 
@@ -30,10 +29,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
- 
   test: ^1.26.2
 
-  # Recommended linting rules
   flutter_lints: ^4.0.0
 
 flutter:
