@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'employer_dashboard.dart';
-import 'manager_table_layout.dart';
+import 'server_dashboard.dart'; // Assuming this exists from teammate
+import 'manager_table_layout.dart'; // We will create this next
 
 class ManagerDashboardPage extends StatelessWidget {
   const ManagerDashboardPage({super.key});
@@ -10,10 +10,12 @@ class ManagerDashboardPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Manager Dashboard"),
+        backgroundColor: Colors.blueGrey,
         actions: [
+          // The button to manage table layout
           IconButton(
             icon: const Icon(Icons.table_chart),
-            tooltip: "Table Layout",
+            tooltip: "Edit Table Layout",
             onPressed: () {
               Navigator.push(
                 context,
@@ -24,8 +26,8 @@ class ManagerDashboardPage extends StatelessWidget {
           ),
         ],
       ),
-
-      body: const EmployerDashboardPage(),
+      // This displays the general employer stats/orders
+      body: const ServerDashboardPage(),
     );
   }
 }
