@@ -41,7 +41,7 @@ void _sendRequest(String type, {String? detail}) async {
       'detail': finalDetail,
       'status': 'Pending',
       'timestamp': FieldValue.serverTimestamp(),
-      'table': table, // <--- CHANGE THIS (It was 'Table 5')
+      'table': table,
     });
     debugPrint('Request $finalType sent successfully for $table. Detail: $finalDetail');
   } catch (e) {
