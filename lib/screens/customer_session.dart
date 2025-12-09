@@ -33,6 +33,18 @@ class _CustomerSessionPageState extends State<CustomerSessionPage> {
       return;
     }
 
+    // If tests set this flag, skip Firestore checks and navigate immediately.
+    if (bypassFirestoreTableCheck) {
+      currentTableId = "Table $tableInput";
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/menu');
+      }
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
     try {
       // 1. Query Firestore for the table
       QuerySnapshot query = await FirebaseFirestore.instance
