@@ -14,6 +14,11 @@ import 'Utils/selection_tools.dart';
 // GLOBAL STATE: Stores the table ID set by the CustomerSessionPage.
 String currentTableId = 'Table 99';
 
+// Test flag: when true, skip Firestore table existence/password checks
+// This allows widget tests to navigate without requiring live Firestore data.
+// Tests can set this to true by importing `main.dart` and assigning it.
+bool bypassFirestoreTableCheck = false;
+
 // Firebase + App Initialization
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -125,7 +130,7 @@ class SelectScreen extends StatelessWidget {
     final double bottomInset = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F4FF), // Soft clean background
+      backgroundColor: const Color(0xFFF8F4FF), //background
       
       appBar: AppBar(
         backgroundColor: Colors.deepPurple.shade400,
