@@ -450,7 +450,6 @@ class _ServerDashboardPageState extends State<ServerDashboardPage>
             children: [
               Icon(icon),
               const SizedBox(width: 10),
-              // FIX: Wrap text in Expanded to prevent RenderFlex overflow
               Expanded( 
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -462,7 +461,7 @@ class _ServerDashboardPageState extends State<ServerDashboardPage>
                     ),
                   ],
                 ),
-              ), // Added Expanded here
+              ),
             ],
           ),
         ),

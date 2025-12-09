@@ -125,7 +125,7 @@ class SelectScreen extends StatelessWidget {
     final double bottomInset = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F4FF), // Soft clean background
+      backgroundColor: const Color(0xFFF8F4FF), //background
       
       appBar: AppBar(
         backgroundColor: Colors.deepPurple.shade400,
