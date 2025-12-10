@@ -55,7 +55,6 @@ class _RoleLoginPageState extends State<RoleLoginPage> {
     // 3. Success -> Route both roles to the EmployerDashboardPage
     Navigator.pushReplacement(
       context,
-      // NOTE: We could pass the role here if the dashboard needed to change its UI:
       // MaterialPageRoute(builder: (_) => EmployerDashboardPage(role: _role)),
       MaterialPageRoute(builder: (_) => const ServerDashboardPage()),
     );

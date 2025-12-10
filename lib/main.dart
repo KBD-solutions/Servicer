@@ -26,7 +26,6 @@ void main() async {
   runApp(const MyApp());
 }
 
-// NOTE: Request sending is implemented in individual screens now.
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

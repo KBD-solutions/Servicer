@@ -210,8 +210,6 @@ class _SelectScreenState extends State<SelectScreen> {
               ),
             ),
           ),
-          
-          // REMOVED: Employer Login Button (as requested)
         ],
       ),
     );
