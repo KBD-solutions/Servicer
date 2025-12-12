@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../main.dart'; // Ensure this path is correct for your global currentTableId
+import '../main.dart';
 import 'role_login_page.dart';
 
 class CustomerSessionPage extends StatefulWidget {
@@ -29,6 +29,18 @@ class _CustomerSessionPageState extends State<CustomerSessionPage> {
       setState(() {
         _isLoading = false;
         _errorMessage = "Please enter both Table Number and a Password.";
+      });
+      return;
+    }
+
+    // If tests set this flag, skip Firestore checks and navigate immediately.
+    if (bypassFirestoreTableCheck) {
+      currentTableId = "Table $tableInput";
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/menu');
+      }
+      setState(() {
+        _isLoading = false;
       });
       return;
     }
