@@ -58,7 +58,6 @@ class _ItemsSelectionPageState extends State<ItemsSelectionPage> {
               itemName: name,
               initialQuantity: initial,
               onQuantityChanged: (qty) {
-                // CHANGED: Wrapped in setState so the Confirm button updates instantly
                 setState(() {
                   _order[name] = qty;
                 });
@@ -75,12 +74,11 @@ class _ItemsSelectionPageState extends State<ItemsSelectionPage> {
             height: 56,
             child: ElevatedButton.icon(
               key: const Key("confirm-button"),
-              onPressed: _hasItems ? _confirm : null, // Disable if empty (optional)
+              onPressed: _confirm,
               icon: const Icon(Icons.check),
               label: const Text('Confirm'),
               style: ElevatedButton.styleFrom(
-                // CHANGED: Light up Purple if items exist, otherwise Grey
-                backgroundColor: _hasItems ? Colors.deepPurpleAccent : Colors.grey,
+                backgroundColor: Colors.deepPurpleAccent,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
               ),
