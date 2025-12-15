@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'manager_dashboard.dart';       // new name for manager view (we'll alias to your existing file)
-import 'server_dashboard.dart';        // simple server view (add/mark done only)
+import 'server_dashboard.dart'; 
+import 'manager_dashboard.dart';
 
 /*
-  This page lets the employee pick a role (Server or Manager)
-  and log in with email + a simple PIN.
-  I kept it super basic on purpose for class demo.
+  This unified login page handles role selection (Server or Manager)
+  and routes both roles to the same Employer Dashboard.
+  The role is passed as an argument to the dashboard for context.
+  
   PINs (for now):
     - Server: 1234
     - Manager: 2468
@@ -19,7 +20,7 @@ class RoleLoginPage extends StatefulWidget {
 }
 
 class _RoleLoginPageState extends State<RoleLoginPage> {
-  String _role = 'Server';               // default choice
+  String _role = 'Server'; // default choice
   final _email = TextEditingController();
   final _pin = TextEditingController();
   String? _error;
@@ -32,13 +33,23 @@ class _RoleLoginPageState extends State<RoleLoginPage> {
   }
 
   void _tryLogin() {
-    // very simple checks just for now
+    setState(() => _error = null);
+
+    // 1. Basic Validation
     if (_email.text.trim().isEmpty) {
       setState(() => _error = 'Please enter an email');
       return;
     }
 
-    // I split pins so roles feel different
+    // ---LOGIC START ---
+    
+    final emailInput = _email.text.trim().toLowerCase();
+    final pinInput = _pin.text.trim();
+
+    /* ---------------------------------------------------------
+       Old login Logic
+       ---------------------------------------------------------
+    // 2. Role-Specific PIN Check
     final pin = _pin.text.trim();
     if (_role == 'Server' && pin != '1234') {
       setState(() => _error = 'Wrong PIN for Server (use 1234)');
@@ -49,17 +60,37 @@ class _RoleLoginPageState extends State<RoleLoginPage> {
       return;
     }
 
-    // send to the correct dashboard
+    // 3. Success -> Route both roles to the EmployerDashboardPage
+    Navigator.pushReplacement(
+      context,
+      // MaterialPageRoute(builder: (_) => EmployerDashboardPage(role: _role)),
+      MaterialPageRoute(builder: (_) => const ServerDashboardPage()),
+    );
+    --------------------------------------------------------- */
+
+    // --- Specific Email & PIN Checks ---
+
     if (_role == 'Server') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const ServerDashboardPage()),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const ManagerDashboardPage()),
-      );
+      // 1. Check Server Credentials (server@test.com / 1234)
+      if (emailInput == 'server@test.com' && pinInput == '1234') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ServerDashboardPage()),
+        );
+      } else {
+        setState(() => _error = 'Invalid Server credentials.\n(Try: server@test.com / 1234)');
+      }
+    } 
+    else if (_role == 'Manager') {
+      // 2. Check Manager Credentials (manager@test.com / 2468)
+      if (emailInput == 'manager@test.com' && pinInput == '2468') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ManagerDashboardPage()),
+        );
+      } else {
+        setState(() => _error = 'Invalid Manager credentials.\n(Try: manager@test.com / 2468)');
+      }
     }
   }
 
@@ -80,7 +111,7 @@ class _RoleLoginPageState extends State<RoleLoginPage> {
                   const Text('Pick your role and sign in', style: TextStyle(fontSize: 18)),
                   const SizedBox(height: 12),
 
-                  // role buttons – I used two simple ChoiceChips to keep it easy
+                  // Role Selection Chips
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -99,6 +130,7 @@ class _RoleLoginPageState extends State<RoleLoginPage> {
                   ),
 
                   const SizedBox(height: 16),
+                  
                   TextField(
                     controller: _email,
                     decoration: const InputDecoration(
@@ -106,10 +138,14 @@ class _RoleLoginPageState extends State<RoleLoginPage> {
                       prefixIcon: Icon(Icons.email),
                       border: OutlineInputBorder(),
                     ),
+                    // Added specific keyboard for emails
+                    keyboardType: TextInputType.emailAddress, 
                   ),
                   const SizedBox(height: 12),
+                  
                   TextField(
                     controller: _pin,
+                    // Dynamic Label Text based on selected role
                     decoration: InputDecoration(
                       labelText: _role == 'Server'
                           ? 'PIN for Server (1234)'
@@ -124,7 +160,11 @@ class _RoleLoginPageState extends State<RoleLoginPage> {
 
                   if (_error != null) ...[
                     const SizedBox(height: 6),
-                    Text(_error!, style: const TextStyle(color: Colors.red)),
+                    Text(
+                      _error!, 
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
                   ],
 
                   const SizedBox(height: 12),

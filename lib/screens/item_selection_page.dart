@@ -32,9 +32,11 @@ class _ItemsSelectionPageState extends State<ItemsSelectionPage> {
   }
 
   void _confirm() {
-    // Returns the map of selected items to the previous screen (SelectScreen)
     Navigator.pop(context, _order);
   }
+
+  // Helper to check if user picked anything
+  bool get _hasItems => _order.values.any((qty) => qty > 0);
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +48,7 @@ class _ItemsSelectionPageState extends State<ItemsSelectionPage> {
       ),
       body: SafeArea(
         child: ListView.separated(
-          padding: const EdgeInsets.symmetric(vertical: 24),
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
           itemCount: widget.items.length,
           separatorBuilder: (_, __) => const SizedBox(height: 16),
           itemBuilder: (context, index) {
@@ -55,16 +57,34 @@ class _ItemsSelectionPageState extends State<ItemsSelectionPage> {
             return ItemCounter(
               itemName: name,
               initialQuantity: initial,
-              onQuantityChanged: (qty) => _order[name] = qty,
+              onQuantityChanged: (qty) {
+                setState(() {
+                  _order[name] = qty;
+                });
+              },
             );
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _confirm,
-        icon: const Icon(Icons.check),
-        label: const Text('confirm'),
-        key: const Key("confirm-button"),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton.icon(
+              key: const Key("confirm-button"),
+              onPressed: _confirm,
+              icon: const Icon(Icons.check),
+              label: const Text('Confirm'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepPurpleAccent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

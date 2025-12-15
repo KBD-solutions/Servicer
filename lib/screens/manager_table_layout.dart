@@ -164,7 +164,6 @@ class _ManagerTableLayoutPageState extends State<ManagerTableLayoutPage> {
       ),
       
       body: StreamBuilder<QuerySnapshot>(
-        // Note: String sorting (1, 10, 2) is default behavior. 
         // For strict 1,2,3 sorting, tableNumber needs to be saved as int in Firestore.
         stream: FirebaseFirestore.instance.collection('tables').orderBy('tableNumber').snapshots(),
         builder: (context, snapshot) {
