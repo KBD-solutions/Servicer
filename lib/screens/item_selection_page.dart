@@ -42,8 +42,8 @@ class _ItemsSelectionPageState extends State<ItemsSelectionPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
-        backgroundColor: Colors.blue,
+        title: Text(widget.title, style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.deepPurple.shade400,
         centerTitle: true,
       ),
       body: SafeArea(
